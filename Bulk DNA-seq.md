@@ -1,3 +1,231 @@
+## ASCAT
+```
+source activate r4.3.1
+# For NGS in Tumor-normal paired mode
+Rscript Run_ASCAT.r ${tumor} ${normal}
+# For NGS in Tumor-only mode
+Rscript Run_ASCAT_TumorOnly.r ${tumor}
+# For TGS in Tumor-normal paired mode
+Rscript Run_ASCAT_LongRead.r ${tumor} ${normal}
+```
+**Run_ASCAT.r**
+```
+args = (commandArgs(TRUE))
+library(ASCAT)
+Tumour.bam <- paste(args[[1]], sep="")
+Normal.bam <- paste(args[[2]], sep="")
+ascat.prepareHTS(
+  tumourseqfile = Tumour.bam,
+  normalseqfile = Normal.bam,
+  tumourname = "Tumour_mix",
+  normalname = "HCC1395BL",
+  allelecounter_exe = "alleleCounter",
+  alleles.prefix = "G1000_alleles_hg38_chr",
+  loci.prefix = "G1000_loci_hg38_chr",
+  gender = "XX",
+  genomeVersion = "hg38",
+  nthreads = 8,
+  tumourLogR_file = "Tumor_LogR.txt",
+  tumourBAF_file = "Tumor_BAF.txt",
+  normalLogR_file = "Germline_LogR.txt",
+  normalBAF_file = "Germline_BAF.txt")
+ascat.bc = ascat.loadData(Tumor_LogR_file = "Tumor_LogR.txt", Tumor_BAF_file = "Tumor_BAF.txt", Germline_LogR_file = "Germline_LogR.txt", Germline_BAF_file = "Germline_BAF.txt", gender = "XX", genomeVersion = "hg38")
+ascat.plotRawData(ascat.bc, img.prefix = "Before_correction_")
+ascat.bc = ascat.correctLogR(ascat.bc, GCcontentfile = "GC_G1000_hg38.txt", replictimingfile = "RT_G1000_hg38.txt")
+ascat.plotRawData(ascat.bc, img.prefix = "After_correction_")
+ascat.bc = ascat.aspcf(ascat.bc)
+ascat.plotSegmentedData(ascat.bc)
+ascat.output = ascat.runAscat(ascat.bc, gamma=1, write_segments = TRUE)
+QC = ascat.metrics(ascat.bc,ascat.output)
+save(ascat.bc, ascat.output, QC, file = 'ASCAT_objects.Rdata')
+output_file <- "purity_ploidy_results.txt"
+file_conn <- file(output_file, "w")
+writeLines(paste("Purity: ", ascat.output$purity), file_conn)
+writeLines(paste("Ploidy: ", ascat.output$ploidy), file_conn)
+close(file_conn)
+```
+**Run_ASCAT_TumorOnly.r**
+```
+args = (commandArgs(TRUE))
+library(ASCAT)
+Tumour.bam <- paste(args[[1]], sep="")
+ascat.prepareHTS(
+  tumourseqfile = Tumour.bam,
+  tumourname = "Tumour_mix",
+  allelecounter_exe = "alleleCounter",
+  alleles.prefix = "G1000_alleles_hg38_chr",
+  loci.prefix = "G1000_loci_hg38_chr",
+  gender = "XX",
+  genomeVersion = "hg38",
+  nthreads = 16,
+  tumourLogR_file = "Tumor_LogR.txt",
+  tumourBAF_file = "Tumor_BAF.txt")
+ascat.bc = ascat.loadData(Tumor_LogR_file = "Tumor_LogR.txt", Tumor_BAF_file = "Tumor_BAF.txt", gender = "XX", genomeVersion = "hg38")
+ascat.plotRawData(ascat.bc, img.prefix = "Before_correction_")
+ascat.bc = ascat.correctLogR(ascat.bc, GCcontentfile = "GC_G1000_hg38.txt", replictimingfile = "RT_G1000_hg38.txt")
+ascat.plotRawData(ascat.bc, img.prefix = "After_correction_")
+gg = ascat.predictGermlineGenotypes(ascat.bc, platform = "WGS_hg38_50X")
+ascat.bc = ascat.aspcf(ascat.bc,ascat.gg=gg)
+ascat.plotSegmentedData(ascat.bc)
+ascat.output = ascat.runAscat(ascat.bc, write_segments = TRUE)
+QC = ascat.metrics(ascat.bc,ascat.output)
+save(ascat.bc, ascat.output, QC, file = 'ASCAT_objects.Rdata')
+output_file <- "purity_ploidy_results.txt"
+file_conn <- file(output_file, "w")
+writeLines(paste("Purity: ", ascat.output$purity), file_conn)
+writeLines(paste("Ploidy: ", ascat.output$ploidy), file_conn)
+close(file_conn)
+```
+**Run_ASCAT_LongRead.r**
+```
+args = (commandArgs(TRUE))
+library(ASCAT)
+Tumour.bam <- paste(args[[1]], sep="")
+Normal.bam <- paste(args[[2]], sep="")
+ascat.prepareHTS(
+  tumourseqfile = Tumour.bam,
+  normalseqfile = Normal.bam,
+  tumourname = "Tumour_mix",
+  normalname = "HCC1395BL",
+  allelecounter_exe = "alleleCounter",
+  alleles.prefix = "G1000_alleles_hg38_chr",
+  loci.prefix = "G1000_loci_hg38_chr",
+  gender = "XX",
+  genomeVersion = "hg38",
+  nthreads = 8,
+  tumourLogR_file = "Tumor_LogR.txt",
+  tumourBAF_file = "Tumor_BAF.txt",
+  normalLogR_file = "Germline_LogR.txt",
+  normalBAF_file = "Germline_BAF.txt",
+  loci_binsize = 500,
+  min_base_qual= 10,
+  additional_allelecounter_flags="-f 0")
+ascat.bc = ascat.loadData(Tumor_LogR_file = "Tumor_LogR.txt", Tumor_BAF_file = "Tumor_BAF.txt", Germline_LogR_file = "Germline_LogR.txt", Germline_BAF_file = "Germline_BAF.txt", gender = "XX", genomeVersion = "hg38")
+ascat.plotRawData(ascat.bc, img.prefix = "Before_correction_")
+ascat.bc = ascat.correctLogR(ascat.bc, GCcontentfile = "GC_G1000_hg38.txt", replictimingfile = "RT_G1000_hg38.txt")
+ascat.plotRawData(ascat.bc, img.prefix = "After_correction_")
+ascat.bc = ascat.aspcf(ascat.bc)
+ascat.plotSegmentedData(ascat.bc)
+ascat.output = ascat.runAscat(ascat.bc, gamma=1, write_segments = TRUE)
+QC = ascat.metrics(ascat.bc,ascat.output)
+save(ascat.bc, ascat.output, QC, file = 'ASCAT_objects.Rdata')
+output_file <- "purity_ploidy_results.txt"
+file_conn <- file(output_file, "w")
+writeLines(paste("Purity: ", ascat.output$purity), file_conn)
+writeLines(paste("Ploidy: ", ascat.output$ploidy), file_conn)
+close(file_conn)
+```
+
+## CNAnorm
+```
+gcbase=CNAnorm/gc1000base_38.txt
+Tumor=$1
+Normal=$2
+prefix=$3
+mkdir ${prefix} && cd ${prefix}
+mkdir tmp
+#Get windows
+perl cox_ctdna_cnv/bam2windows.pl --samtools-path samtools -ts -cs -d ./tmp -r 1000 -gc ${gcbase} ${Tumor} ${Normal} > ${prefix}.tab.tmp
+less ${prefix}.tab.tmp|grep -v '_' > ${prefix}.tab
+#Run CNAnorm
+source activate r4.3.1
+Rscript Run_CANnorm.r ${prefix}
+```
+**Run_CANnorm.r**
+```
+args = (commandArgs(TRUE))
+library(CNAnorm)
+input.tab <- paste(args[[1]],".tab", sep="",collapse="")
+da <- read.table(input.tab, sep = '\t', header = T)
+CN <- dataFrame2object(da)
+toSkip <- c("chrY","chrM")
+CN <- gcNorm(CN, exclude = toSkip)
+CN <- addSmooth(CN, lambda = 7)
+CN <- peakPloidy(CN, exclude = toSkip)
+pdf(file="PeakPloidy.pdf")
+p1 <-plotPeaks(CN, special1 = 'chrX', special2 ='chrY')
+print(p1)
+dev.off()
+CN <- addDNACopy(CN)
+CN <- validation(CN)
+CN <- discreteNorm(CN)
+pdf(file="CNVprofile.pdf")
+p2 <-plotGenome(CN, superimpose = 'DNACopy')
+print(p2)
+dev.off()
+exportTable(CN, file = "CNAnorm_table.tab", show = 'ploidy')
+file_conn <- file("tumContent.txt", "w")
+writeLines(paste("Purity: ", CN@Res@suggested.tumContent), file_conn)
+close(file_conn)
+```
+
+## ABSOLUTE
+```
+seg=$1
+maf=$2
+sample_name=$3
+r-4.1.3/bin/Rscript RunAbsolute.r ${seg} ${sample_name}_out ${sample_name} ${maf}
+```
+**RunAbsolute.r**
+```
+args = (commandArgs(TRUE))
+seg.dat <- paste(args[[1]], sep="")
+out.path <- paste(args[[2]], sep="")
+sp.name <- paste(args[[3]], sep="")
+maf <- paste(args[[4]], sep="")
+library(ABSOLUTE)
+RunAbsolute(
+  seg.dat.fn = seg.dat,
+  maf.fn = maf,
+  min.mut.af = 0,
+  min.ploidy = 0.5,
+  max.ploidy = 4,
+  max.sigma.h = 0.2,
+  platform = "Illumina_WES",
+  copy_num_type = "total",
+  sigma.p = 0,
+  results.dir = out.path,
+  primary.disease = "BLCA",
+  sample.name = sp.name,
+  max.as.seg.count = 1500,
+  max.non.clonal = 1,
+  max.neg.genome = 0.005
+)
+```
+
+## absCNseq
+```
+source activate r4.3.1
+Rscript run_absCNseq.r ${CN} ${SNP} ${Tumor_name} ${run_path}
+```
+**run_absCNseq.r**
+```
+args = (commandArgs(TRUE))
+library(absCNseq)
+CN.file <- paste(args[[1]], sep="")
+snv.file <- paste(args[[2]], sep="")
+sample.name <- paste(args[[3]], sep="")
+result.dir <- paste(args[[4]], sep="")
+abscnseq.output <- run.absCNSeq(CN.file,snv.fn = snv.file, result.dir,sample.name, seq.type = "WGS")
+output_file <- "purity_ploidy_results.txt"
+file_conn <- file(output_file, "w")
+writeLines(paste("Purity: ", abscnseq.output$searchRes[1,"alpha"]), file_conn)
+writeLines(paste("Ploidy: ", abscnseq.output$searchRes[1,"tau"]), file_conn)
+close(file_conn)
+```
+## PyLOH
+```
+Tumor=$1
+Normal=$2
+Tumor_name=$3
+segment=$4
+mkdir ${Tumor_name} && cd ${Tumor_name}
+run_path=$(pwd)
+python seg2bed.py ${segment} segment.bed --seg_length 1000000
+python PyLOH.py preprocess genome.fa ${Normal} ${Tumor} ${Tumor_name} --min_depth 20 --min_base_qual 10 --min_map_qual 10 --process_num 36 --segments_bed segment.bed
+python PyLOH.py run_model ${Tumor_name} --allelenumber_max 2 --max_iters 100 --stop_value 1e-7
+```
+
 ## TITAN
 ```
 source activate titan
@@ -22,6 +250,17 @@ sequenza.results(sequenza.extract = test,
     cp.table = CP, sample.id = "Tumor_rep1",
             out.dir="Tumor_rep1")
 ```
+## FACETS
+```
+source activate cnv_facets
+tumor=$1
+normal=$2
+prefix=$3
+mkdir ${prefix} && cd ${prefix}
+Rscript cnv_facets.R -t ${tumor} -n ${normal} -vcf hg38_addchr.vcf.gz -o ${prefix} --gbuild hg38
+```
+
+
 ## Sclust
 ```
 Sclust bamprocess -t Tumor_rep1/Tumor_rep1_T.bam -n Tumor_rep1/Tumor_rep1_N.bam -o Tumor_rep1/Tumor_rep1 -build hg38 -part 2 -r chr1
