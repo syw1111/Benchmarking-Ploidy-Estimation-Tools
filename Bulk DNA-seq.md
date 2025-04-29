@@ -312,6 +312,13 @@ java -jar -Xmx8G home/software/WGD_software/cobalt-1.14.1.jar -reference Normal_
 java -jar -Xmx8G home/software/WGD_software/amber-3.9.jar -reference Normal_rep1 -reference_bam home/Benchmark/Alignment/Data1/Preprocess_Data1/Normal_1.hg38.rmdup.filter.sorted.bam -tumor Tumor_rep1 -tumor_bam home/Benchmark/Alignment/Data1/Preprocess_Data1/Tumor_1.hg38.rmdup.filter.sorted.bam -output_dir Tumor_rep1 -loci home/ref/Human/hg38/HMFTools/v6_0/ref/38/GermlineHetPon.38.vcf.gz -threads 6 -ref_genome_version V38
 java -jar -Xmx8G home/software/WGD_software/hmftools-purple-v3.8.4/purple_v3.8.4.jar -reference Normal_rep1 -tumor Tumor_rep1 -amber Tumor_rep1 -cobalt Tumor_rep1 -gc_profile home/ref/Human/hg38/HMFTools/v6_0/ref/38/copy_number/GC_profile.1000bp.38.cnp -ref_genome_version 38 -ref_genome home/WuLab/Benchmark/human/genome.fa -ensembl_data_dir home/ref/Human/hg38/HMFTools/v6_0/ref/38/common/ensembl_data -output_dir Tumor_rep1
 ```
+**Tumor only mode**
+```
+mkdir Tumor_rep1
+java -jar -Xmx8G home/software/WGD_software/cobalt-1.14.1.jar -tumor_only_diploid_bed home/ref/Human/hg38/HMFTools/v6_0/ref/38/copy_number/DiploidRegions.38.bed.gz -tumor Tumor_rep1 -tumor_bam home/Benchmark/Alignment/Data1/Preprocess_Data1/Tumor_1.hg38.rmdup.filter.sorted.bam -gc_profile home/ref/Human/hg38/HMFTools/v6_0/ref/38/copy_number/GC_profile.1000bp.38.cnp -output_dir Tumor_rep1 -threads 24
+java -jar -Xmx8G home/software/WGD_software/amber-3.9.jar -tumor Tumor_rep1 -tumor_bam home/Benchmark/Alignment/Data1/Preprocess_Data1/Tumor_1.hg38.rmdup.filter.sorted.bam -output_dir Tumor_rep1 -loci home/ref/Human/hg38/HMFTools/v6_0/ref/38/GermlineHetPon.38.vcf.gz -threads 24 -ref_genome_version V38
+java -jar -Xmx8G home/software/WGD_software/hmftools-purple-v3.8.4/purple_v3.8.4.jar -tumor Tumor_rep1 -amber Tumor_rep1 -cobalt Tumor_rep1 -gc_profile home/ref/Human/hg38/HMFTools/v6_0/ref/38/copy_number/GC_profile.1000bp.38.cnp -ref_genome_version 38 -ref_genome home/WuLab/Benchmark/human/genome.fa -ensembl_data_dir home/ref/Human/hg38/HMFTools/v6_0/ref/38/common/ensembl_data -output_dir Tumor_rep1 -threads 24
+```
 ## Accucopy
 ```
 HOST_DIR=home/WuLab/Benchmark/Accucopy/
